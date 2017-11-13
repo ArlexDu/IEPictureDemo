@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>IE图片测试</title>
+    <script type="text/javascript" src="./js/jquery.js"></script>
+    <script type="text/javascript" src="./js/jquery.Jcrop.js"></script>
+    <script type="text/javascript" src="./js/jquery-form.js"></script>
+    <link rel="stylesheet" type="text/css" href="./css/main.css">
+    <link rel="stylesheet" type="text/css" href="./css/jquery.Jcrop.css">
+</head>
+
+<body style="height:100%;margin:0px;padding:0px;">
+<div id="crop-div">
+    <div id="crop-container">
+        <div id="crop-img-div"></div>
+        <div id="btn-group">
+            <button id="crop-confirm">确定</button>
+            <button id="crop-cancel" style="margin-left: 50px">取消</button>
+        </div>
+    </div>
+</div>
+<table style="width: 100%;height: 100%;padding: 0px;margin: 0px;background-color: transparent
+;border:none;border-collapse: collapse">
+    <tr>
+        <td style="text-align: left">
+            <form id="form">上传图片
+                <input name="file" type="file" id="Pic" accept="image/*" onclick="bindOnChange('Pic')">
+            </form>
+            <div>
+                <img id="showImg" style="width: 100%;height: 280px"/>
+            </div>
+        </td>
+    </tr>
+</table>
+</body>
+<script>
+    /**
+     * 图片剪切上传
+     */
+
+    var base_url = "http://localhost:8080";
+    //开始剪裁的X轴位置
+    var x;
+    //开始剪裁的Y轴位置
+    var y
+    //剪裁内容的宽度
+    var w;
+    //剪裁内容的高度
+    var h;
+    function bindOnChange(id) {
+        //IE 6 7 绑定事件
+        if(!$.support.leadingWhitespace){
+            document.getElementById(id).attachEvent('onpropertychange', IEunbindOnChange);
+        } else {
+            $("#"+id).change(function (event) {
+                $(this).off(event);
+                showImage(id);
+            })
+        }
+    }
+
+    function IEunbindOnChange(){
+        var id = "Pic";
+        document.getElementById(id).detachEvent('onpropertychange', IEunbindOnChange);
+        showImage(id);
+    }
+
+    //显示图片
+    function showImage(id){
+        // var file = document.getElementById("carPic").files[0];
+        var obj = document.getElementById(id);
+        // avalon.log("显示对象Input信息");
+        // for(var item in obj){
+        //     avalon.log(item+":"+obj[item]);
+        // }
+        // avalon.log("结束显示对象Input信息");
+        if (!!window.ActiveXObject || "ActiveXObject" in window) {
+            var path = obj.value;
+            // avalon.log("file path is : "+path);
+            // document.getElementById("car_img").style.filter =
+            //     "progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled='true',sizingMethod='scale',src=\"" + path + "\")";
+            // vm.carSrc = path;
+            imageCrop(id,path);
+        }else{
+            var file = obj.files[0];
+            var reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function (evt) {
+                // vm.carSrc = evt.target.result;
+                imageCrop(id,evt.target.result);
+            };
+        }
+    }
+
+    //显示切割窗口
+    function imageCrop(id,file){
+        $("#crop-div").show();
+        $("#carbigsort").hide();
+        $("#businessType").hide();
+        var crop_bg = $("<div id='crop-background'></div>");
+        crop_bg.appendTo($("#crop-div"));
+        var img = $("<img />");
+        img.appendTo($("#crop-img-div"));
+        img.attr("src",file);
+        img.Jcrop({
+                onChange:   setCoords
+            },
+            function(){
+                //设置截图框的位置
+                var containerWidth = $("#crop-container").width();
+                var containerHeight = $("#crop-container").height();
+                var htmlWidth = $(document).width();
+                var htmlHeight = $(document).height();
+                var top = (htmlHeight-containerHeight)>0?(htmlHeight-containerHeight)/2:0;
+                var left = (htmlWidth-containerWidth)>0?(htmlWidth-containerWidth)/2:0;
+                //背景颜色
+                $("#crop-background").css({
+                    "height":htmlHeight+"px",
+                    "width":htmlWidth+"px"
+                });
+                $("#crop-container").css({
+                    top:top+"px",
+                    left:left+"px"
+                })
+                left = (containerWidth-210)/2;
+                $("#btn-group").css({
+                    "margin-top":"5px",
+                    "margin-left":left+"px"
+                })
+                $("#crop-confirm").on("click",function () {
+                    saveImg();
+                });
+                $("#crop-cancel").on("click",function () {
+                    hideCropDialog(id);
+                });
+                //初始化Jcrop
+                var jcrop_api = this;
+                jcrop_api.animateTo([0,0,400,200]);
+                jcrop_api.setOptions({ aspectRatio: 2/1 });
+                jcrop_api.setOptions({ allowSelect: false });
+                jcrop_api.focus();
+            });
+    }
+
+    //监视剪切框的参数
+    function setCoords(c)
+    {
+        x = Math.floor(c.x);
+        y = Math.floor(c.y);
+        w = Math.floor(c.w);
+        h = Math.floor(c.h);
+    };
+    //保存车辆图片
+    function saveImg() {
+        if($("#formX").length>0){
+            $("#formX").remove();
+        }
+        if($("#formY").length>0){
+            $("#formY").remove();
+        }
+        if($("#formW").length>0){
+            $("#formW").remove();
+        }
+        if($("#formH").length>0){
+            $("#formH").remove();
+        }
+        var formX = $("<input class='param' name='x' value=" + x + ">");
+        var formY = $("<input class='param' name='y' value=" + y + ">");
+        var formW = $("<input class='param' name='w' value=" + w + ">");
+        var formH = $("<input class='param' name='h' value=" + h + ">");
+        var form = $("#form");
+        form.attr("enctype","multipart/form-data");
+        form.attr("encoding","multipart/form-data");
+        formX.appendTo(form);
+        formY.appendTo(form);
+        formW.appendTo(form);
+        formH.appendTo(form);
+        var options = {
+            url:base_url +"/upload/frame",
+            type:"post",
+            success:function(data){
+                //重置form参数
+                formX.remove();
+                formY.remove();
+                formW.remove();
+                formH.remove();
+                // IE6返回的内容在<pre>标签里面
+                if(data.indexOf("<PRE>")!=-1){
+                    data = data.replace("<PRE>","");
+                    data = data.replace("</PRE>","");
+                }
+                var res = $.parseJSON(data);
+                if(res['code']==0){
+                    var src = res["data"];
+                    document.getElementById("showImg").src = base_url+'/api/frameimage/' + src;
+                    hideCropDialog("dajiaPic");
+                }else{
+                    alert("上传图片失败！");
+                }
+            }
+        };
+        form.ajaxSubmit(options);
+    }
+    function hideCropDialog(id){
+        $("#carbigsort").show();
+        $("#businessType").show();
+        $("#crop-img-div").empty();
+        $("#crop-div").hide();
+        $("#crop-background").remove();
+        //解除绑定取消按钮和确认按钮的绑定事件
+        $("#crop-confirm").off("click");
+        $("#crop-cancel").off("click");
+        //重置inpur框，并且添加绑定事件
+        var newInput = $("<input name='file' type='file' id='"+id+"' accept='image/*'>");
+        newInput.on("click",function () {
+            bindOnChange(id);
+        });
+        $("#"+id).replaceWith(newInput);
+    }
+</script>
+
+</html>

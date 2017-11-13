@@ -1,0 +1,29 @@
+{
+  "name": "iepicturedemo",
+  "version": "1.0.0",
+  "description": "ie pictrue browser crop and sync submit",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "node_modules/.bin/gulp serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArlexDu/IEPictureDemo.git"
+  },
+  "keywords": [
+    "html5",
+    "css3"
+  ],
+  "author": "arlex",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ArlexDu/IEPictureDemo/issues"
+  },
+  "homepage": "https://github.com/ArlexDu/IEPictureDemo#readme",
+  "devDependencies": {
+    "browser-sync": "^2.18.13",
+    "gulp": "^3.9.1"
+  },
+  "dependencies": {}
+}
